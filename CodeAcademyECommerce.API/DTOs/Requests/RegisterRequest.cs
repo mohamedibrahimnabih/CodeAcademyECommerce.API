@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace CodeAcademyECommerce.API.Requests
+namespace CodeAcademyECommerce.API.DTOs.Requests
 {
     public class RegisterRequest
     {
