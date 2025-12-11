@@ -100,9 +100,28 @@ namespace CodeAcademyECommerce.API.Areas.Identity
 
             await _userManager.AddToRoleAsync(user, SD.CUSTOMER);
 
-            /* YOUR CODE HERE */
+            var userRoles = await _userManager.GetRolesAsync(user);
 
-            var jwtToken = new JwtSecurityToken(/* YOUR CODE HERE */);
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Name),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, string.Join(",", userRoles)),
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(JwtRegisteredClaimNames.Jti, DateTime.Now.ToString())
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("lp4ywiPp4zHCe1tmAmIGXoF7829twxfN"));
+            var signingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var jwtToken = new JwtSecurityToken(
+                issuer: "https://localhost:7270",
+                audience: "https://localhost:4200,https://localhost:5000",
+                claims: claims,
+                expires: DateTime.Now.AddDays(14),
+                signingCredentials: signingCredentials
+            );
+
 
             return Ok(new
             {
