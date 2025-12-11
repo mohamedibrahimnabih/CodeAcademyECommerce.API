@@ -22,7 +22,7 @@ namespace CodeAcademyECommerce.API.Areas.Identity
         private readonly IEmailSender _emailSender;
         private readonly ApplicationDbContext _context;
 
-        public AccountsController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,IEmailSender emailSender, ApplicationDbContext context)
+        public AccountsController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IEmailSender emailSender, ApplicationDbContext context)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -59,7 +59,7 @@ namespace CodeAcademyECommerce.API.Areas.Identity
 
             await _emailSender.SendEmailAsync(user.Email, "Please Confirm Your Account In Ecommerce Code Academy App", file);
 
-            return Ok(new
+            return CreatedAtAction(nameof(Login), new
             {
                 success_msg = "Add Account Successfully",
                 date = DateTime.Now,
@@ -89,7 +89,12 @@ namespace CodeAcademyECommerce.API.Areas.Identity
             var user = await _userManager.FindByEmailAsync(loginRequest.EmailOrUserName) ??
                 await _userManager.FindByNameAsync(loginRequest.EmailOrUserName);
 
-            if(user is null) return NotFound();
+            if (user is null)
+                return BadRequest(new
+                {
+                    key = "EmailOrUserName",
+                    msg = "Invalid Email Or User Name OR Password"
+                });
 
             var result = await _userManager.CheckPasswordAsync(user, loginRequest.Password);
 
@@ -97,7 +102,7 @@ namespace CodeAcademyECommerce.API.Areas.Identity
                 return BadRequest(new
                 {
                     key = "EmailOrUserName",
-                    msg = "Invalid Email Or User Name"
+                    msg = "Invalid Email Or User Name OR Password"
                 });
 
             await _signInManager.SignInAsync(user, loginRequest.RememberMe);
@@ -187,7 +192,9 @@ namespace CodeAcademyECommerce.API.Areas.Identity
             {
                 return BadRequest(new
                 {
-                    error_msg = "Too Many Atempts, Please Try Again Later"
+                    error_msg = "Too Many Atempts, Please Try Again Later",
+                    date = DateTime.Now,
+                    traceId = Guid.NewGuid().ToString()
                 });
             }
 
@@ -203,9 +210,11 @@ namespace CodeAcademyECommerce.API.Areas.Identity
                 await _emailSender.SendEmailAsync(user.Email, "Please Password Reset Your Account In Ecommerce Code Academy App",
                     $"<h1>Password Reset By Using OTP {otp}</h1>");
 
-                return Ok(new
+                return CreatedAtAction(nameof(ValidateOTP), new
                 {
                     id = user.Id,
+                }, new
+                {
                     success_msg = "Send Email Successfully",
                     date = DateTime.Now,
                     traceId = Guid.NewGuid().ToString()
@@ -213,54 +222,55 @@ namespace CodeAcademyECommerce.API.Areas.Identity
             }
         }
 
+        [HttpPost]
+        [Route("ValidateOTP")]
+        public IActionResult ValidateOTP(ValidateOTPRequest validateOTPRequest)
+        {
+            var otp = _context.ApplicationUserOTPs.OrderBy(e => e.Id).LastOrDefault(e => e.ApplicationUserId == validateOTPRequest.Id && !e.IsUsed && e.ValidTo > DateTime.UtcNow);
 
-        //[HttpPost]
-        //public IActionResult ValidateOTP(ValidateOTPVM validateOTPVM)
-        //{
-        //    if (!ModelState.IsValid)
-        //        return View(validateOTPVM);
+            if (otp.OTP == validateOTPRequest.OTP)
+            {
+                otp.IsUsed = true;
+                _context.SaveChanges();
 
-        //    var otp = _context.ApplicationUserOTPs.OrderBy(e => e.Id).LastOrDefault(e => e.ApplicationUserId == validateOTPVM.Id && !e.IsUsed && e.ValidTo > DateTime.UtcNow);
+                return CreatedAtAction(nameof(NewPassword), new { id = validateOTPRequest.Id }, new
+                {
+                    success_msg = "Valid OTP",
+                    date = DateTime.Now,
+                    traceId = Guid.NewGuid().ToString()
+                });
 
-        //    if (otp.OTP == validateOTPVM.OTP)
-        //    {
-        //        otp.IsUsed = true;
-        //        _context.SaveChanges();
-        //        return RedirectToAction("NewPassword", new { validateOTPVM.Id });
-        //    }
+            }
 
-        //    TempData["error-notification"] = "Invalid OTP";
-        //    return View();
-        //}
+            return BadRequest(new
+            {
+                error_msg = "Invalid OTP",
+                date = DateTime.Now,
+                traceId = Guid.NewGuid().ToString()
+            });
+        }
 
+        [HttpPost]
+        [Route("NewPassword")]
+        public async Task<IActionResult> NewPassword(NewPasswordRequest newPasswordRequest)
+        {
 
-        //[HttpPost]
-        //public async Task<IActionResult> NewPassword(NewPasswordVM newPasswordVM)
-    //    {
-    //        if (!ModelState.IsValid)
-    //            return View(newPasswordVM);
+            var user = await _userManager.FindByIdAsync(newPasswordRequest.Id);
 
-    //        var user = await _userManager.FindByIdAsync(newPasswordVM.Id);
+            if (user is null) return NotFound();
 
-    //        if (user is null)
-    //        {
-    //            TempData["error-notification"] = "User Not Found";
-    //            return View(newPasswordVM);
-    //        }
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, newPasswordRequest.Password);
 
-    //        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-    //        var result = await _userManager.ResetPasswordAsync(user, token, newPasswordVM.Password);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
 
-    //        if }
-
-        //(!result.Succeeded)
-        //        {
-        //            TempData["error-notification"] = result.Errors;
-        //            return View(newPasswordVM);
-        //        }
-
-    //        TempData["success-notification"] = "Change Password Successfully";
-    //        return RedirectToAction(nameof(Login));
-    //    }
+            return CreatedAtAction(nameof(Login), new
+            {
+                success_msg = "Change Password Successfully",
+                date = DateTime.Now,
+                traceId = Guid.NewGuid().ToString()
+            });
+        }
     }
 }
