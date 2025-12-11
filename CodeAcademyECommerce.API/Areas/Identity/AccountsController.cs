@@ -3,7 +3,10 @@ using CodeAcademyECommerce.API.Utilities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace CodeAcademyECommerce.API.Areas.Identity
 {
@@ -52,8 +55,6 @@ namespace CodeAcademyECommerce.API.Areas.Identity
 
             await _emailSender.SendEmailAsync(user.Email, "Please Confirm Your Account In Ecommerce Code Academy App", file);
 
-            await _userManager.AddToRoleAsync(user, SD.CUSTOMER);
-
             return Ok(new
             {
                 success_msg = "Add Account Successfully",
@@ -81,10 +82,32 @@ namespace CodeAcademyECommerce.API.Areas.Identity
         [Route("Login")]
         public async Task<IActionResult> Login(LoginRequest loginRequest)
         {
-            ////////////////////////////////////////
+            var user = await _userManager.FindByEmailAsync(loginRequest.EmailOrUserName) ??
+                await _userManager.FindByNameAsync(loginRequest.EmailOrUserName);
+
+            if(user is null) return NotFound();
+
+            var result = await _userManager.CheckPasswordAsync(user, loginRequest.Password);
+
+            if (!result)
+                return BadRequest(new
+                {
+                    key = "EmailOrUserName",
+                    msg = "Invalid Email Or User Name"
+                });
+
+            await _signInManager.SignInAsync(user, loginRequest.RememberMe);
+
+            await _userManager.AddToRoleAsync(user, SD.CUSTOMER);
+
+            /* YOUR CODE HERE */
+
+            var jwtToken = new JwtSecurityToken(/* YOUR CODE HERE */);
 
             return Ok(new
             {
+                token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
+                expireIn = "14 day",
                 success_msg = "Welcome Back!!",
                 date = DateTime.Now,
                 traceId = Guid.NewGuid().ToString()
