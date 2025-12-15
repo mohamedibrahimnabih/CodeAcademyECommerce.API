@@ -143,5 +143,23 @@ namespace CodeAcademyECommerce.API.Areas.Admin
 
             return NoContent();
         }
+
+        [HttpDelete("{id}")]
+        public IActionResult Delete(int id)
+        {
+            var brand = _context.Brands.FirstOrDefault(e => e.Id == id);
+
+            if (brand is null) return NotFound();
+
+            var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot\\images\\brand_logos", brand.logo);
+
+            if (System.IO.File.Exists(oldFilePath))
+                System.IO.File.Delete(oldFilePath);
+
+            _context.Remove(brand);
+            _context.SaveChanges();
+
+            return NoContent();
+        }
     }
 }

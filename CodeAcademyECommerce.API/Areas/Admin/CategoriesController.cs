@@ -77,5 +77,24 @@ namespace CodeAcademyECommerce.API.Areas.Admin
             });
         }
 
+
+        [HttpPut("{id}")]
+        public IActionResult Update(int id, CategoryUpdateRequest categoryUpdateRequest)
+        {
+            var category = _context.Categories.FirstOrDefault(e => e.Id == id);
+
+            if (category is null) return NotFound();
+
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            category.Name = categoryUpdateRequest.Name;
+            category.Status = categoryUpdateRequest.Status;
+            category.UpdatedAT = DateTime.Now;
+            category.UpdatedById = userId;
+
+            _context.SaveChanges();
+
+            return NoContent();
+        }
     }
 }
