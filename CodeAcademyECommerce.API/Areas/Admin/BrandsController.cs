@@ -97,5 +97,51 @@ namespace CodeAcademyECommerce.API.Areas.Admin
                 traceId = Guid.NewGuid().ToString()
             });
         }
+
+        [HttpPut("{id}")]
+        public IActionResult Update(int id, BrandUpdateRequest brandUpdateRequest)
+        {
+            var brand = _context.Brands.FirstOrDefault(e => e.Id == id);
+
+            if (brand is null) return NotFound();
+
+            if (brandUpdateRequest.Logo is not null && brandUpdateRequest.Logo.Length > 0)
+            {
+                // Delete file from wwwroot
+                var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot\\images\\brand_logos", brand.logo);
+
+                if (System.IO.File.Exists(oldFilePath))
+                    System.IO.File.Delete(oldFilePath);
+
+                // Save file name in DB
+                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(brandUpdateRequest.Logo.FileName);
+
+                string fileName = $"{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}_{fileNameWithoutExtension}_{Guid.NewGuid().ToString()}{Path.GetExtension(brandUpdateRequest.Logo.FileName)}";
+
+                brand.logo = fileName;
+
+                // Save file in wwwroot
+                string filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot\\images\\brand_logos", fileName);
+
+                //if (System.IO.File.Exists(filePath))
+                //    System.IO.File.Create(filePath);
+
+                using (var stream = System.IO.File.Create(filePath))
+                {
+                    brandUpdateRequest.Logo.CopyTo(stream);
+                }
+            }
+
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            brand.Name = brandUpdateRequest.Name;
+            brand.Status = brandUpdateRequest.Status;
+            brand.UpdatedAT = DateTime.Now;
+            brand.UpdatedById = userId;
+
+            _context.SaveChanges();
+
+            return NoContent();
+        }
     }
 }

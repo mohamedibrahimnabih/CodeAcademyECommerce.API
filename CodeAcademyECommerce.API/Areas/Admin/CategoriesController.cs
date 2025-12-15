@@ -1,8 +1,10 @@
 ﻿using CodeAcademyECommerce.API.DataAccess;
+using CodeAcademyECommerce.API.DTOs.Requests;
 using CodeAcademyECommerce.API.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace CodeAcademyECommerce.API.Areas.Admin
 {
@@ -49,6 +51,29 @@ namespace CodeAcademyECommerce.API.Areas.Admin
             return Ok(new
             {
                 category
+            });
+        }
+
+        [HttpPost]
+        public IActionResult Create(CategoryCreateRequest categoryCreateRequest)
+        {
+            Category category = new()
+            {
+                Name = categoryCreateRequest.Name,
+                Status = categoryCreateRequest.Status
+            };
+
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            category.CreateById = userId;
+
+            _context.Categories.Add(category);
+            _context.SaveChanges();
+
+            return CreatedAtAction(nameof(GetById), new { category.Id }, new
+            {
+                success_msg = "Add Category Successfully",
+                date = DateTime.Now,
+                traceId = Guid.NewGuid().ToString()
             });
         }
 
