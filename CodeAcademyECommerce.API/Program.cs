@@ -44,8 +44,7 @@ namespace CodeAcademyECommerce.API
             {
                 config.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 config.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-                .AddJwtBearer(options =>
+            }).AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {

@@ -20,11 +20,23 @@ namespace CodeAcademyECommerce.API.Areas.Admin
         }
 
         [HttpGet]
-        public IActionResult Get()
+        public IActionResult GetAll(string? categoryName, int page = 1)
         {
             var categories = _context.Categories.AsQueryable();
 
-            return Ok(categories);
+            if(categoryName is not null)
+                categories = categories.Where(e => e.Name.ToLower().Contains(categoryName.Trim().ToLower()));
+
+            int currentPage = page;
+            double totalPages = Math.Ceiling(categories.Count() / 5.0);
+            categories = categories.Skip((page - 1) * 5).Take(5);
+
+            return Ok(new
+            {
+                categories,
+                totalPages,
+                currentPage
+            });
         }
 
     }
