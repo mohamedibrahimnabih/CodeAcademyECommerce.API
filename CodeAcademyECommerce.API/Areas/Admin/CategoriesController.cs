@@ -96,5 +96,18 @@ namespace CodeAcademyECommerce.API.Areas.Admin
 
             return NoContent();
         }
+
+        [HttpDelete("{id}")]
+        public IActionResult Delete(int id)
+        {
+            var category = _context.Categories.FirstOrDefault(e => e.Id == id);
+
+            if (category is null) return NotFound();
+
+            _context.Remove(category);
+            _context.SaveChanges();
+
+            return NoContent();
+        }
     }
 }
