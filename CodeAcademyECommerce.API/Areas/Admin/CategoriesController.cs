@@ -39,5 +39,18 @@ namespace CodeAcademyECommerce.API.Areas.Admin
             });
         }
 
+        [HttpGet("{id}")]
+        public IActionResult GetById(int id)
+        {
+            var category = _context.Categories.FirstOrDefault(e => e.Id == id);
+
+            if(category is null) return NotFound();
+
+            return Ok(new
+            {
+                category
+            });
+        }
+
     }
 }

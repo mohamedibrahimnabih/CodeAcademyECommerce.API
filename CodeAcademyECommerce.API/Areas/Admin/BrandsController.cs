@@ -19,6 +19,24 @@ namespace CodeAcademyECommerce.API.Areas.Admin
             _context = context;
         }
 
+        [HttpGet]
+        public IActionResult GetAll(string? brandName, int page = 1)
+        {
+            var brands = _context.Brands.AsQueryable();
 
+            if(brandName is not null)
+                brands = brands.Where(e => e.Name.ToLower().Contains(brandName.Trim().ToLower()));
+
+            int currentPage = page;
+            double totalPages = Math.Ceiling(brands.Count() / 5.0);
+            brands = brands.Skip((page - 1) * 5).Take(5);
+
+            return Ok(new
+            {
+                brands,
+                currentPage,
+                totalPages
+            });
+        }
     }
 }
