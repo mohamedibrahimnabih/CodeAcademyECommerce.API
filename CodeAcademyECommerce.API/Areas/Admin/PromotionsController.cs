@@ -56,7 +56,7 @@ namespace CodeAcademyECommerce.API.Areas.Admin
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (userId is null) return NotFound();
+            if (userId is null) return Unauthorized();
 
             Promotion promotion = new()
             {
@@ -81,6 +81,35 @@ namespace CodeAcademyECommerce.API.Areas.Admin
         [HttpPut("{id}")]
         public IActionResult Update(int id, PromotionUpdateRequest promotionUpdateRequest)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId is null) return Unauthorized();
+
+            var promotion = _context.Promotions.FirstOrDefault(e => e.Id == id);
+
+            if (promotion is null) return NotFound();
+
+            promotion.Code = promotionUpdateRequest.Code;
+            promotion.Discount = promotionUpdateRequest.Discount;
+            promotion.MaxOfUsage = promotionUpdateRequest.MaxOfUsage;
+            promotion.UpdatedAT = DateTime.Now;
+            promotion.UpdatedById = userId;
+
+            _context.SaveChanges();
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult Delete(int id)
+        {
+            var promotion = _context.Promotions.FirstOrDefault(e => e.Id == id);
+
+            if (promotion is null) return NotFound();
+
+            _context.Promotions.Remove(promotion);
+            _context.SaveChanges();
+
             return NoContent();
         }
     }

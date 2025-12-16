@@ -68,7 +68,7 @@ namespace CodeAcademyECommerce.API.Areas.Admin
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (userId is null) return NotFound();
+            if (userId is null) return Unauthorized();
 
             Product product = new()
             {
@@ -164,7 +164,7 @@ namespace CodeAcademyECommerce.API.Areas.Admin
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (userId is null) return NotFound();
+            if (userId is null) return Unauthorized();
 
             var product = _context.Products.FirstOrDefault(e => e.Id == id);
 
@@ -269,8 +269,66 @@ namespace CodeAcademyECommerce.API.Areas.Admin
             return NoContent();
         }
 
-        //[HttpDelete("{id}")]
-        //public IActionResult Delete(int id);
+        [HttpDelete("{id}/DeleteSubImg")]
+        public IActionResult DeleteSubImg(int id)
+        {
+            var productSubImg = _context.ProductSubImgs.FirstOrDefault(e => e.Id == id);
+
+            if (productSubImg is null) return NotFound();
+
+            // Remove old img from wwwroot
+            string oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot\\images\\product_imgs\\sub_imgs", productSubImg.SubImg);
+
+            if (System.IO.File.Exists(oldFilePath))
+                System.IO.File.Delete(oldFilePath);
+
+            _context.ProductSubImgs.Remove(productSubImg);
+            _context.SaveChanges();
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}/DeleteColor")]
+        public IActionResult DeleteColor(int id)
+        {
+            var productColor = _context.ProductColors.FirstOrDefault(e => e.Id == id);
+
+            if (productColor is null) return NotFound();
+
+            _context.ProductColors.Remove(productColor);
+            _context.SaveChanges();
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult Delete(int id)
+        {
+            var product = _context.Products.FirstOrDefault(e => e.Id == id);
+
+            if (product is null) return NotFound();
+
+            string oldMainImgFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot\\images\\product_imgs", product.MainImg);
+
+            if (System.IO.File.Exists(oldMainImgFilePath))
+                System.IO.File.Delete(oldMainImgFilePath);
+
+            var productSubImgs = _context.ProductSubImgs.Where(e => e.ProductId == id);
+
+            foreach (var item in productSubImgs)
+            {
+                // Remove old img from wwwroot
+                string oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot\\images\\product_imgs\\sub_imgs", item.SubImg);
+
+                if (System.IO.File.Exists(oldFilePath))
+                    System.IO.File.Delete(oldFilePath);
+            }
+
+            _context.Products.Remove(product);
+            _context.SaveChanges();
+
+            return NoContent();
+        }
 
     }
 }

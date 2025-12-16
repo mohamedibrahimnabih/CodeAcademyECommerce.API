@@ -59,7 +59,7 @@ namespace CodeAcademyECommerce.API.Areas.Admin
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (userId is null) return NotFound();
+            if (userId is null) return Unauthorized();
 
             Category category = new()
             {
@@ -86,7 +86,7 @@ namespace CodeAcademyECommerce.API.Areas.Admin
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (userId is null) return NotFound();
+            if (userId is null) return Unauthorized();
 
             var category = _context.Categories.FirstOrDefault(e => e.Id == id);
 
