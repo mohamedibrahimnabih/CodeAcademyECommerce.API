@@ -3,6 +3,7 @@ using CodeAcademyECommerce.API.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace CodeAcademyECommerce.API.Areas.Admin
 {
@@ -20,11 +21,23 @@ namespace CodeAcademyECommerce.API.Areas.Admin
         }
 
         [HttpGet]
-        public IActionResult GetAll(/* YOUR CODE HERE */)
+        public IActionResult GetAll(string? code, int page = 1)
         {
-            /* YOUR CODE HERE */
+            var promotions = _context.Promotions.AsQueryable();
 
-            return Ok(/* YOUR CODE HERE */);
+            if(code is not null)
+                promotions = promotions.Where(e=>e.Code.ToLower().Contains(code.ToLower().Trim()));
+
+            double totalPages = Math.Ceiling(promotions.Count() / 5.0);
+            int currentPage = page;
+            promotions = promotions.Skip((page - 1) * 5).Take(5);
+
+            return Ok(new
+            {
+                promotions,
+                totalPages,
+                currentPage
+            });
         }
     }
 }

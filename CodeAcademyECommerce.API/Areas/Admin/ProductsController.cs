@@ -1,8 +1,10 @@
 ﻿using CodeAcademyECommerce.API.DataAccess;
+using CodeAcademyECommerce.API.DTOs.Requests;
 using CodeAcademyECommerce.API.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace CodeAcademyECommerce.API.Areas.Admin
 {
@@ -51,11 +53,109 @@ namespace CodeAcademyECommerce.API.Areas.Admin
             });
         }
 
-        //[HttpGet("{id}")]
-        //public IActionResult GetById(int id);
+        [HttpGet("{id}")]
+        public IActionResult GetById(int id)
+        {
+            var product = _context.Products.FirstOrDefault(e => e.Id == id);
 
-        //[HttpPost]
-        //public IActionResult Create(Body);
+            if (product is null) return NotFound();
+
+            return Ok(product);
+        }
+
+        [HttpPost]
+        public IActionResult Create(ProductCreateRequest productCreateRequest)
+        {
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            Product product = new()
+            {
+                Name = productCreateRequest.Name,
+                Description = productCreateRequest.Description,
+                BrandId = productCreateRequest.BrandId,
+                CategoryId = productCreateRequest.CategoryId,
+                Status = productCreateRequest.Status,
+                Price = productCreateRequest.Price,
+                Discount = productCreateRequest.Discount,
+                Quantity = productCreateRequest.Quantity,
+                CreateById = userId,
+            };
+
+            if (productCreateRequest.MainImg is not null && productCreateRequest.MainImg.Length > 0)
+            {
+                // Save file name in DB
+                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(productCreateRequest.MainImg.FileName);
+
+                string fileName = $"{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}_{fileNameWithoutExtension}_{Guid.NewGuid().ToString()}{Path.GetExtension(productCreateRequest.MainImg.FileName)}";
+
+                product.MainImg = fileName;
+
+                // Save file in wwwroot
+                string filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot\\images\\product_imgs", fileName);
+
+                //if (System.IO.File.Exists(filePath))
+                //    System.IO.File.Create(filePath);
+
+                using (var stream = System.IO.File.Create(filePath))
+                {
+                    productCreateRequest.MainImg.CopyTo(stream);
+                }
+            }
+
+            _context.Add(product);
+            _context.SaveChanges();
+
+            if(productCreateRequest.SubImages is not null && productCreateRequest.SubImages.Count > 0)
+            {
+                foreach (var item in productCreateRequest.SubImages)
+                {
+                    // Save file in wwwroot
+                    string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(item.FileName);
+
+                    string fileName = $"{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}_{fileNameWithoutExtension}_{Guid.NewGuid().ToString()}{Path.GetExtension(item.FileName)}";
+
+                    string filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot\\images\\product_imgs\\sub_imgs", fileName);
+
+                    //if (System.IO.File.Exists(filePath))
+                    //    System.IO.File.Create(filePath);
+
+                    using (var stream = System.IO.File.Create(filePath))
+                    {
+                        item.CopyTo(stream);
+                    }
+
+                    // Save file name in DB
+                    _context.ProductSubImgs.Add(new()
+                    {
+                        SubImg = fileName,
+                        ProductId = product.Id
+                    });
+                }
+
+                _context.SaveChanges();
+            }
+
+            if(productCreateRequest.Colors is not null && productCreateRequest.Colors.Count > 0)
+            {
+                foreach (var item in productCreateRequest.Colors)
+                {
+                    _context.ProductColors.Add(new()
+                    {
+                        Color = item,
+                        ProductId = product.Id
+                    });
+                }
+
+                _context.SaveChanges();
+            }
+
+            return CreatedAtAction(nameof(GetById), new { product.Id }, new
+            {
+                success_msg = "Add Product Successfully",
+                date = DateTime.Now,
+                traceId = Guid.NewGuid().ToString()
+            });
+        }
 
         //[HttpPut("{id}")]
         //public IActionResult Update(int id, Body);

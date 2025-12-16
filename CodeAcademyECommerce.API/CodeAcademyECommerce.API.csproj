@@ -23,6 +23,7 @@
   <ItemGroup>
     <Folder Include="DTOs\Responses\" />
     <Folder Include="wwwroot\images\brand_logos\" />
+    <Folder Include="wwwroot\images\product_imgs\sub_imgs\" />
   </ItemGroup>
 
 </Project>
