@@ -66,7 +66,9 @@ namespace CodeAcademyECommerce.API.Areas.Admin
         [HttpPost]
         public IActionResult Create(ProductCreateRequest productCreateRequest)
         {
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId is null) return NotFound();
 
             Product product = new()
             {
@@ -157,8 +159,115 @@ namespace CodeAcademyECommerce.API.Areas.Admin
             });
         }
 
-        //[HttpPut("{id}")]
-        //public IActionResult Update(int id, Body);
+        [HttpPut("{id}")]
+        public IActionResult Update(int id, ProductUpdateRequest productUpdateRequest)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId is null) return NotFound();
+
+            var product = _context.Products.FirstOrDefault(e => e.Id == id);
+
+            if (product is null) return NotFound();
+
+            product.Name = productUpdateRequest.Name;
+            product.Description = productUpdateRequest.Description;
+            product.Price = productUpdateRequest.Price;
+            product.Discount = productUpdateRequest.Discount;
+            product.Quantity = productUpdateRequest.Quantity;
+            product.BrandId = productUpdateRequest.BrandId;
+            product.CategoryId = productUpdateRequest.CategoryId;
+            product.UpdatedById = userId;
+            product.UpdatedAT = DateTime.Now;
+
+            if (productUpdateRequest.MainImg is not null && productUpdateRequest.MainImg.Length > 0)
+            {
+                // Remove old img from wwwroot
+                string oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot\\images\\product_imgs", product.MainImg);
+
+                if (System.IO.File.Exists(oldFilePath))
+                    System.IO.File.Delete(oldFilePath);
+
+                // Save file name in DB
+                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(productUpdateRequest.MainImg.FileName);
+
+                string fileName = $"{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}_{fileNameWithoutExtension}_{Guid.NewGuid().ToString()}{Path.GetExtension(productUpdateRequest.MainImg.FileName)}";
+
+                product.MainImg = fileName;
+
+                // Save file in wwwroot
+                string filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot\\images\\product_imgs", fileName);
+
+                //if (System.IO.File.Exists(filePath))
+                //    System.IO.File.Create(filePath);
+
+                using (var stream = System.IO.File.Create(filePath))
+                {
+                    productUpdateRequest.MainImg.CopyTo(stream);
+                }
+            }
+
+            if (productUpdateRequest.SubImages is not null && productUpdateRequest.SubImages.Count > 0)
+            {
+                var productSubImgs = _context.ProductSubImgs.Where(e => e.ProductId == id);
+
+                foreach(var item in productSubImgs)
+                {
+                    // Remove old img from wwwroot
+                    string oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot\\images\\product_imgs\\sub_imgs", item.SubImg);
+
+                    if (System.IO.File.Exists(oldFilePath))
+                        System.IO.File.Delete(oldFilePath);
+                }
+
+                _context.ProductSubImgs.RemoveRange(productSubImgs);
+
+                foreach (var item in productUpdateRequest.SubImages)
+                {
+                    // Save file in wwwroot
+                    string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(item.FileName);
+
+                    string fileName = $"{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}_{fileNameWithoutExtension}_{Guid.NewGuid().ToString()}{Path.GetExtension(item.FileName)}";
+
+                    string filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot\\images\\product_imgs\\sub_imgs", fileName);
+
+                    //if (System.IO.File.Exists(filePath))
+                    //    System.IO.File.Create(filePath);
+
+                    using (var stream = System.IO.File.Create(filePath))
+                    {
+                        item.CopyTo(stream);
+                    }
+
+                    // Save file name in DB
+                    _context.ProductSubImgs.Add(new()
+                    {
+                        SubImg = fileName,
+                        ProductId = product.Id
+                    });
+                }
+            }
+
+            if (productUpdateRequest.Colors is not null && productUpdateRequest.Colors.Count > 0)
+            {
+                var productColors = _context.ProductColors.Where(e => e.ProductId == id);
+
+                _context.ProductColors.RemoveRange(productColors);
+
+                foreach (var item in productUpdateRequest.Colors)
+                {
+                    _context.ProductColors.Add(new()
+                    {
+                        Color = item,
+                        ProductId = product.Id
+                    });
+                }
+            }
+
+            _context.SaveChanges();
+
+            return NoContent();
+        }
 
         //[HttpDelete("{id}")]
         //public IActionResult Delete(int id);

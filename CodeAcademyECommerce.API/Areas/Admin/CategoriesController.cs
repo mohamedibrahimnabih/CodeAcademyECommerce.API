@@ -57,13 +57,16 @@ namespace CodeAcademyECommerce.API.Areas.Admin
         [HttpPost]
         public IActionResult Create(CategoryCreateRequest categoryCreateRequest)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId is null) return NotFound();
+
             Category category = new()
             {
                 Name = categoryCreateRequest.Name,
                 Status = categoryCreateRequest.Status
             };
 
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             category.CreateById = userId;
 
             _context.Categories.Add(category);
@@ -81,11 +84,13 @@ namespace CodeAcademyECommerce.API.Areas.Admin
         [HttpPut("{id}")]
         public IActionResult Update(int id, CategoryUpdateRequest categoryUpdateRequest)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId is null) return NotFound();
+
             var category = _context.Categories.FirstOrDefault(e => e.Id == id);
 
             if (category is null) return NotFound();
-
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             category.Name = categoryUpdateRequest.Name;
             category.Status = categoryUpdateRequest.Status;

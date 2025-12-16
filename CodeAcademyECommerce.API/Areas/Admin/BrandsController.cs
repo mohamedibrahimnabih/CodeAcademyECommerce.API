@@ -57,6 +57,10 @@ namespace CodeAcademyECommerce.API.Areas.Admin
         [HttpPost]
         public IActionResult Create(BrandCreateRequest brandCreateRequest)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId is null) return NotFound();
+
             Brand brand = new()
             {
                 Name = brandCreateRequest.Name,
@@ -84,7 +88,6 @@ namespace CodeAcademyECommerce.API.Areas.Admin
                 }
             }
 
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             brand.CreateById = userId;
 
             _context.Brands.Add(brand);
@@ -101,6 +104,10 @@ namespace CodeAcademyECommerce.API.Areas.Admin
         [HttpPut("{id}")]
         public IActionResult Update(int id, BrandUpdateRequest brandUpdateRequest)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId is null) return NotFound();
+
             var brand = _context.Brands.FirstOrDefault(e => e.Id == id);
 
             if (brand is null) return NotFound();
@@ -131,8 +138,6 @@ namespace CodeAcademyECommerce.API.Areas.Admin
                     brandUpdateRequest.Logo.CopyTo(stream);
                 }
             }
-
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             brand.Name = brandUpdateRequest.Name;
             brand.Status = brandUpdateRequest.Status;

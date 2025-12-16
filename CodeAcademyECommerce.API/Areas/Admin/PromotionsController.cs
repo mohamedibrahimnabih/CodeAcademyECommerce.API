@@ -1,4 +1,5 @@
 ﻿using CodeAcademyECommerce.API.DataAccess;
+using CodeAcademyECommerce.API.DTOs.Requests;
 using CodeAcademyECommerce.API.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -38,6 +39,49 @@ namespace CodeAcademyECommerce.API.Areas.Admin
                 totalPages,
                 currentPage
             });
+        }
+
+        [HttpGet("{id}")]
+        public IActionResult GetById(int id)
+        {
+            var promotion = _context.Promotions.FirstOrDefault(e => e.Id == id);
+
+            if (promotion is null) return NotFound();
+
+            return Ok(promotion);
+        }
+
+        [HttpPost]
+        public IActionResult Create(PromotionCreateRequest promotionCreateRequest)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId is null) return NotFound();
+
+            Promotion promotion = new()
+            {
+                Code = promotionCreateRequest.Code,
+                Discount = promotionCreateRequest.Discount,
+                MaxOfUsage = promotionCreateRequest.MaxOfUsage,
+                ProductId = promotionCreateRequest.ProductId,
+                CreateById = userId
+            };
+
+            _context.Promotions.Add(promotion);
+            _context.SaveChanges();
+
+            return CreatedAtAction(nameof(GetById), new { promotion.Id }, new
+            {
+                success_msg = "Add Promotion Successfully",
+                date = DateTime.Now,
+                traceId = Guid.NewGuid().ToString()
+            });
+        }
+
+        [HttpPut("{id}")]
+        public IActionResult Update(int id, PromotionUpdateRequest promotionUpdateRequest)
+        {
+            return NoContent();
         }
     }
 }
