@@ -62,7 +62,17 @@ namespace CodeAcademyECommerce.API.Areas.Admin
             return NoContent();
         }
 
-        //[HttpPatch("{id}/Canceled")]
-        //public IActionResult Canceled();
+        [HttpPatch("{id}/Canceled")]
+        public IActionResult Canceled(int id)
+        {
+            var msg = _context.Messages.FirstOrDefault(e => e.Id == id);
+
+            if (msg is null) return NotFound();
+
+            msg.TicketStatus = TicketStatus.Canceled;
+            _context.SaveChanges();
+
+            return NoContent();
+        }
     }
 }
