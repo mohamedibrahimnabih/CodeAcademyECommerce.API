@@ -104,9 +104,50 @@ namespace CodeAcademyECommerce.API.Areas.Admin
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update(string id, string role)
+        public async Task<IActionResult> Update(string id, string role)
         {
+            var user = _userManager.Users.FirstOrDefault(e => e.Id == id);
+
+            if (user is null) return NotFound();
+
+            var userRoles = await _userManager.GetRolesAsync(user);
+
+            await _userManager.RemoveFromRolesAsync(user, userRoles);
+
+            await _userManager.AddToRoleAsync(user, role);
+
             return NoContent();
+        }
+
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> LockUnLock(string id)
+        {
+            var user = _userManager.Users.FirstOrDefault(e => e.Id == id);
+
+            if (user is null) return NotFound();
+
+            if(await _userManager.IsInRoleAsync(user, SD.SUPER_ADMIN_ROLE))
+            {
+                return BadRequest(new
+                {
+                    key = "InvalidAction",
+                    msg = "You Can't Block Super Users"
+                });
+            }
+
+            else
+            {
+                user.LockoutEnabled = !user.LockoutEnabled;
+
+                if (user.LockoutEnabled)
+                    user.LockoutEnd = null;
+                else
+                    user.LockoutEnd = DateTime.Now.AddDays(10);
+
+                await _userManager.UpdateAsync(user);
+
+                return NoContent();
+            }
         }
     }
 }

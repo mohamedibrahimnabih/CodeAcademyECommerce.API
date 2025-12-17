@@ -3,10 +3,13 @@ using CodeAcademyECommerce.API.Utilities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Scalar;
 using Scalar.AspNetCore;
+using System.Globalization;
 using System.Text;
 
 namespace CodeAcademyECommerce.API
@@ -24,6 +27,24 @@ namespace CodeAcademyECommerce.API
             builder.Services.AddOpenApi();
             //builder.Services.AddEndpointsApiExplorer();
             //builder.Services.AddSwaggerGen();
+
+            builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+
+            const string defaultCulture = "en";
+
+            var supportedCultures = new[]
+            {
+                new CultureInfo(defaultCulture),
+                new CultureInfo("ar"),
+                new CultureInfo("es"),
+            };
+
+            builder.Services.Configure<RequestLocalizationOptions>(options =>
+            {
+                options.DefaultRequestCulture = new RequestCulture(defaultCulture);
+                options.SupportedCultures = supportedCultures;
+                options.SupportedUICultures = supportedCultures;
+            });
 
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -77,6 +98,8 @@ namespace CodeAcademyECommerce.API
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseRequestLocalization(app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
 
             app.MapControllers();
 
