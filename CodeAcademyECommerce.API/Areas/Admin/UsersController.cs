@@ -3,7 +3,9 @@ using CodeAcademyECommerce.API.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace CodeAcademyECommerce.API.Areas.Admin
 {
@@ -15,11 +17,13 @@ namespace CodeAcademyECommerce.API.Areas.Admin
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly IEmailSender _emailSender;
 
-        public UsersController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+        public UsersController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IEmailSender emailSender)
         {
             _userManager = userManager;
             _roleManager = roleManager;
+            _emailSender = emailSender;
         }
 
         [HttpGet]
@@ -43,18 +47,53 @@ namespace CodeAcademyECommerce.API.Areas.Admin
             });
         }
 
-        [HttpGet("Roles")]
-        public IActionResult GetAllRoles()
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(string id)
         {
-            var roles = _roleManager.Roles.AsQueryable();
+            var user = _userManager.Users.FirstOrDefault(e => e.Id == id);
 
-            return Ok(roles);
+            if (user is null) return NotFound();
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return Ok(new
+            {
+                user.Id,
+                user.UserName,
+                user.Name,
+                user.Email,
+                roles
+            });
         }
 
         [HttpPost]
-        public IActionResult Create(UserCreateRequest userCreateRequest)
+        public async Task<IActionResult> Create(UserCreateRequest userCreateRequest)
         {
-            /* YOUR CODE HERE */
+            ApplicationUser user = new()
+            {
+                Name = userCreateRequest.Name,
+                Email = userCreateRequest.Email,
+                PhoneNumber = userCreateRequest.PhoneNumber,
+                UserName = userCreateRequest.UserName,
+                EmailConfirmed = userCreateRequest.EmailConfirmation
+            };
+
+            var result = await _userManager.CreateAsync(user, userCreateRequest.Password);
+
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
+
+            if (!userCreateRequest.EmailConfirmation)
+            {
+                // Send Email Confirmation
+                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                var link = Url.Action("Confirm", "Account", new { area = "Identity", user.Id, token }, Request.Scheme);
+
+                await _emailSender.SendEmailAsync(user.Email, "Pleas Confirm Your Account In Ecommerce Code Academy App",
+                    $"<h1>Please Confirm You Account By clicking <a href='{link}'>Here</a></h1>");
+            }
+
+            await _userManager.AddToRoleAsync(user, userCreateRequest.Role);
 
             return CreatedAtAction(nameof(GetAll), new
             {
@@ -62,6 +101,12 @@ namespace CodeAcademyECommerce.API.Areas.Admin
                 date = DateTime.Now,
                 traceId = Guid.NewGuid().ToString()
             });
+        }
+
+        [HttpPut("{id}")]
+        public IActionResult Update(string id, string role)
+        {
+            return NoContent();
         }
     }
 }
