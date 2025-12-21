@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Scalar;
 using Scalar.AspNetCore;
+using Stripe;
 using System.Globalization;
 using System.Text;
 
@@ -81,6 +82,9 @@ namespace CodeAcademyECommerce.API
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("lp4ywiPp4zHCe1tmAmIGXoF7829twxfN"))
                 };
             });
+
+            builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
+            StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
             var app = builder.Build();
 

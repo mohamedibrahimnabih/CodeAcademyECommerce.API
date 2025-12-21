@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>69151b4d-2c0c-4259-904a-6707010a9bb5</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +25,7 @@
   <ItemGroup>
     <Folder Include="DTOs\Responses\" />
     <Folder Include="wwwroot\images\brand_logos\" />
+    <Folder Include="wwwroot\images\ratings\" />
     <Folder Include="wwwroot\images\product_imgs\sub_imgs\" />
   </ItemGroup>
 

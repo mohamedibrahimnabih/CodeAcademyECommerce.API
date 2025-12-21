@@ -187,18 +187,23 @@ namespace CodeAcademyECommerce.API.Areas.Customer
             return NoContent();
         }
 
+        [HttpGet("Pay")]
         public async Task<IActionResult> Pay()
         {
 
-            var user = await _userManager.GetUserAsync(User);
+            //var user = await _userManager.GetUserAsync(User);
 
-            if (user == null) return NotFound();
+            //if (user == null) return NotFound();
 
-            var carts = _context.Carts.Include(e => e.Product).Where(e => e.ApplicationUserId == user.Id);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId == null) return NotFound();
+
+            var carts = _context.Carts.Include(e => e.Product).Where(e => e.ApplicationUserId == userId);
 
             Order order = new()
             {
-                ApplicationUserId = user.Id,
+                ApplicationUserId = userId,
                 TotalPrice = carts.Sum(e => e.Price * e.Count),
             };
             _context.Orders.Add(order);
@@ -209,8 +214,8 @@ namespace CodeAcademyECommerce.API.Areas.Customer
                 PaymentMethodTypes = new List<string> { "card" },
                 LineItems = new List<SessionLineItemOptions>(),
                 Mode = "payment",
-                SuccessUrl = $"{Request.Scheme}://{Request.Host}/customer/checkout/success/{order.Id}",
-                CancelUrl = $"{Request.Scheme}://{Request.Host}/customer/checkout/cancel/{order.Id}",
+                SuccessUrl = $"{Request.Scheme}://{Request.Host}/Customer/Checkouts/Success/{order.Id}",
+                CancelUrl = $"{Request.Scheme}://{Request.Host}/Customer/Checkouts/Cancel/{order.Id}",
             };
 
             foreach (var item in carts)
@@ -238,7 +243,10 @@ namespace CodeAcademyECommerce.API.Areas.Customer
             order.SessionId = session.Id;
             _context.SaveChanges();
 
-            return Redirect(session.Url);
+            return Ok(new
+            {
+                url = session.Url
+            });
         }
     }
 }
