@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Mapster" Version="7.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.11" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.11" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
@@ -23,8 +24,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DTOs\Responses\" />
     <Folder Include="wwwroot\images\brand_logos\" />
+    <Folder Include="wwwroot\images\users\" />
     <Folder Include="wwwroot\images\ratings\" />
     <Folder Include="wwwroot\images\product_imgs\sub_imgs\" />
   </ItemGroup>

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace CodeAcademyECommerce.API.Areas.Customer
 {
@@ -16,35 +17,40 @@ namespace CodeAcademyECommerce.API.Areas.Customer
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _context;
 
-        public TicketController(UserManager<ApplicationUser> userManager, ApplicationDbContext context)
+        public TicketsController(UserManager<ApplicationUser> userManager, ApplicationDbContext context)
         {
             _userManager = userManager;
             _context = context;
         }
 
-        public async Task<IActionResult> GetAll(string? name, int page = 1)
+        [HttpGet]
+        public IActionResult GetAll(string? name, int page = 1)
         {
-            var user = await _userManager.GetUserAsync(User);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (user is null) return NotFound();
+            if (userId == null) return NotFound();
 
+            //var user = await _userManager.GetUserAsync(User);
 
-            var tickets = _context.Messages.Where(e => e.SenderId == user.Id && !e.IsDeleted);
+            //if (user is null) return NotFound();
 
-            if (filterVM.Name is not null)
-                tickets = tickets.Where(e => e.Text.ToLower().Contains(filterVM.Name.ToLower().Trim()));
+            var tickets = _context.Messages.Where(e => e.SenderId == userId && !e.IsDeleted);
+
+            if (name is not null)
+                tickets = tickets.Where(e => e.Text.ToLower().Contains(name.ToLower().Trim()));
 
             double totalPages = Math.Ceiling(tickets.Count() / 5.0);
-            int currentPage = filterVM.Page;
+            int currentPage = page;
 
-            return View(new TicketWithRelatedVM()
+            return Ok(new 
             {
-                Messages = tickets.ToList(),
-                CurrentPage = currentPage,
-                TotalPages = totalPages,
+                tickets,
+                currentPage,
+                totalPages,
             });
         }
 
+        [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
 
@@ -56,10 +62,7 @@ namespace CodeAcademyECommerce.API.Areas.Customer
             message.TicketStatus = TicketStatus.Canceled;
             _context.SaveChanges();
 
-            TempData["success-notification"] = "Delete Message Successfully";
-
-            return RedirectToAction("Index");
-
+            return NoContent();
         }
     }
 }
