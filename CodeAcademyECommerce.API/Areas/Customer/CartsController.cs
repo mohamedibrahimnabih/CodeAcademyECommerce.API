@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Stripe.Checkout;
 using System.Security.Claims;
 
 namespace CodeAcademyECommerce.API.Areas.Customer
@@ -182,62 +183,62 @@ namespace CodeAcademyECommerce.API.Areas.Customer
 
             _context.Carts.Remove(cart);
             _context.SaveChanges();
-
+            
             return NoContent();
         }
 
-        //public async Task<IActionResult> Pay()
-        //{
+        public async Task<IActionResult> Pay()
+        {
 
-        //    var user = await _userManager.GetUserAsync(User);
+            var user = await _userManager.GetUserAsync(User);
 
-        //    if (user == null) return NotFound();
+            if (user == null) return NotFound();
 
-        //    var carts = _context.Carts.Include(e => e.Product).Where(e => e.ApplicationUserId == user.Id);
+            var carts = _context.Carts.Include(e => e.Product).Where(e => e.ApplicationUserId == user.Id);
 
-        //    Order order = new()
-        //    {
-        //        ApplicationUserId = user.Id,
-        //        TotalPrice = carts.Sum(e => e.Price * e.Count),
-        //    };
-        //    _context.Orders.Add(order);
-        //    _context.SaveChanges();
+            Order order = new()
+            {
+                ApplicationUserId = user.Id,
+                TotalPrice = carts.Sum(e => e.Price * e.Count),
+            };
+            _context.Orders.Add(order);
+            _context.SaveChanges();
 
-        //    var options = new SessionCreateOptions
-        //    {
-        //        PaymentMethodTypes = new List<string> { "card" },
-        //        LineItems = new List<SessionLineItemOptions>(),
-        //        Mode = "payment",
-        //        SuccessUrl = $"{Request.Scheme}://{Request.Host}/customer/checkout/success/{order.Id}",
-        //        CancelUrl = $"{Request.Scheme}://{Request.Host}/customer/checkout/cancel/{order.Id}",
-        //    };
+            var options = new SessionCreateOptions
+            {
+                PaymentMethodTypes = new List<string> { "card" },
+                LineItems = new List<SessionLineItemOptions>(),
+                Mode = "payment",
+                SuccessUrl = $"{Request.Scheme}://{Request.Host}/customer/checkout/success/{order.Id}",
+                CancelUrl = $"{Request.Scheme}://{Request.Host}/customer/checkout/cancel/{order.Id}",
+            };
 
-        //    foreach (var item in carts)
-        //    {
-        //        options.LineItems.Add(new SessionLineItemOptions
-        //        {
-        //            PriceData = new SessionLineItemPriceDataOptions
-        //            {
-        //                Currency = "omr",
-        //                ProductData = new SessionLineItemPriceDataProductDataOptions
-        //                {
-        //                    Name = item.Product.Name,
-        //                    Description = item.Product.Description,
-        //                },
-        //                UnitAmount = (item.Price * 1000),
-        //            },
-        //            Quantity = item.Count,
-        //        });
-        //    }
+            foreach (var item in carts)
+            {
+                options.LineItems.Add(new SessionLineItemOptions
+                {
+                    PriceData = new SessionLineItemPriceDataOptions
+                    {
+                        Currency = "omr",
+                        ProductData = new SessionLineItemPriceDataProductDataOptions
+                        {
+                            Name = item.Product.Name,
+                            Description = item.Product.Description,
+                        },
+                        UnitAmount = (item.Price * 1000),
+                    },
+                    Quantity = item.Count,
+                });
+            }
 
 
-        //    var service = new SessionService();
-        //    var session = service.Create(options);
+            var service = new SessionService();
+            var session = service.Create(options);
 
-        //    order.SessionId = session.Id;
-        //    _context.SaveChanges();
+            order.SessionId = session.Id;
+            _context.SaveChanges();
 
-        //    return Redirect(session.Url);
-        //}
+            return Redirect(session.Url);
+        }
     }
 }
