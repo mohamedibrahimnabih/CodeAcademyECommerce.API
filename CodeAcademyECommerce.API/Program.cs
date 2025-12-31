@@ -21,6 +21,17 @@ namespace CodeAcademyECommerce.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(
+                                  policy =>
+                                  {
+                                      policy.AllowAnyOrigin()
+                                            .AllowAnyMethod()
+                                            .AllowAnyHeader();
+                                  });
+            });
+
             // Add services to the container.
 
             builder.Services.AddControllers();
@@ -99,6 +110,8 @@ namespace CodeAcademyECommerce.API
             }
 
             app.UseHttpsRedirection();
+
+            app.UseCors();
 
             app.UseAuthentication();
             app.UseAuthorization();
