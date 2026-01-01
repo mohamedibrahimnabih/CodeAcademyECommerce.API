@@ -4,6 +4,7 @@ using CodeAcademyECommerce.API.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Security.Claims;
 
 namespace CodeAcademyECommerce.API.Areas.Admin
@@ -11,7 +12,7 @@ namespace CodeAcademyECommerce.API.Areas.Admin
     [Route("[area]/[controller]")]
     [ApiController]
     [Area(SD.ADMIN_AREA)]
-    //[Authorize(Roles = $"{SD.SUPER_ADMIN_ROLE},{SD.ADMIN_ROLE},{SD.EMPLOYEE}")]
+    [Authorize(Roles = $"{SD.SUPER_ADMIN_ROLE},{SD.ADMIN_ROLE},{SD.EMPLOYEE}")]
     public class CategoriesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;

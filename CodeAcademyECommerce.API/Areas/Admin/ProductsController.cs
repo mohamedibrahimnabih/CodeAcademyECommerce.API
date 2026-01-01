@@ -11,7 +11,7 @@ namespace CodeAcademyECommerce.API.Areas.Admin
     [Route("[area]/[controller]")]
     [ApiController]
     [Area(SD.ADMIN_AREA)]
-    //[Authorize(Roles = $"{SD.SUPER_ADMIN_ROLE},{SD.ADMIN_ROLE},{SD.EMPLOYEE}")]
+    [Authorize(Roles = $"{SD.SUPER_ADMIN_ROLE},{SD.ADMIN_ROLE},{SD.EMPLOYEE}")]
     public class ProductsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
