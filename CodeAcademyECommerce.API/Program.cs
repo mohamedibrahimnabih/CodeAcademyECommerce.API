@@ -109,6 +109,8 @@ namespace CodeAcademyECommerce.API
                 //app.UseSwaggerUI();
             }
 
+            app.UseStaticFiles();
+
             app.UseHttpsRedirection();
 
             app.UseCors();
